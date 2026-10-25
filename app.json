@@ -5,8 +5,16 @@
     "version": "2.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#06070A",
+      "resizeMode": "contain"
+    },
     "android": {
       "package": "com.aniket.bhagadbilla",
+      "splash": {
+        "backgroundColor": "#06070A",
+        "resizeMode": "contain"
+      },
       "adaptiveIcon": {
         "backgroundColor": "#06070A"
       },
