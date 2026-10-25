@@ -25,15 +25,7 @@ distribution: 'zulu'
 java-version: '17'
 ​- name: Ensure Signing Keystore Exists
 working-directory: android/app
-run: |
-if [ ! -f debug.keystore ]; then
-keytool -genkeypair -v -storetype PKCS12 
--keystore debug.keystore 
--alias androiddebugkey 
--keyalg RSA -keysize 2048 -validity 10000 
--storepass android -keypass android 
--dname "CN=Android Debug,O=Android,C=US"
-fi
+run: test -f debug.keystore || keytool -genkeypair -v -storetype PKCS12 -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
 ​- name: Build Standalone Release APK (ARM64 Optimized)
 working-directory: android
 run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
