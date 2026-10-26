@@ -1,26 +1,76 @@
-{
-"name": "bhagadbilla",
-"version": "1.0.0",
-"main": "node_modules/expo/AppEntry.js",
-"scripts": {
-"start": "expo start",
-"android": "expo run:android",
-"ios": "expo run:ios",
-"web": "expo start --web"
-},
-"dependencies": {
-"@expo/vector-icons": "^14.0.4",
-"expo": "~52.0.0",
-"expo-blur": "~14.0.1",
-"expo-device": "~7.0.1",
-"expo-file-system": "~18.0.4",
-"expo-status-bar": "~2.0.0",
-"llama.rn": "^0.4.2",
-"react": "18.3.1",
-"react-native": "0.76.3"
-},
-"devDependencies": {
-"@babel/core": "^7.25.2"
-},
-"private": true
-}
+name: Build Bhagadbilla Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 3. Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 4. Install dependencies & align Expo SDK packages
+        run: |
+          npm install --legacy-peer-deps
+          npx expo install --fix
+
+      - name: 5. Generate Native Android Project
+        env:
+          CI: "1"
+        run: npx expo prebuild --platform android --clean
+
+      - name: 6. Configure Gradle Memory & Cleartext Support
+        run: |
+          echo "" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
+          node -e '
+          const fs = require("fs");
+          const p = "android/app/src/main/AndroidManifest.xml";
+          let xml = fs.readFileSync(p, "utf8");
+          if (!xml.includes("usesCleartextTraffic")) {
+            xml = xml.replace("<application", "<application android:usesCleartextTraffic=\"true\"");
+          } else {
+            xml = xml.replace(/android:usesCleartextTraffic="false"/g, "android:usesCleartextTraffic=\"true\"");
+          }
+          fs.writeFileSync(p, xml);
+          '
+
+      - name: 7. Ensure Signing Keystore Exists (No Secrets Needed)
+        working-directory: android/app
+        run: |
+          if [ ! -f debug.keystore ]; then
+            keytool -genkeypair -v -storetype PKCS12 \
+              -keystore debug.keystore \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: 8. Build Standalone Release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: 9. Upload Ready-to-Install Bhagadbilla APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bhagadbilla-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
