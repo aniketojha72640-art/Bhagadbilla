@@ -1,37 +1,63 @@
-name: Build Bhagadbilla Android APK
-on: [push, workflow_dispatch]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
-      - name: Fix Expo SDK
-        run: npx expo install --fix
-      - name: Generate Native Android Project
-        env:
-          CI: "1"
-        run: npx expo prebuild --platform android --clean
-      - name: Configure Gradle Memory
-        run: echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
-      - name: Force Cleartext Support
-        run: node -e 'const fs = require("fs"); const p = "android/app/src/main/AndroidManifest.xml"; let xml = fs.readFileSync(p, "utf8"); xml = xml.replace("<application", "<application android:usesCleartextTraffic=\"true\""); fs.writeFileSync(p, xml);'
-      - name: Build Standalone Release APK
-        working-directory: android
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m" -Pandroid.injected.signing.store.file=debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Bhagadbilla-APK
-          path: android/app/build/outputs/apk/release/app-release.apk
+{
+  "name": "Build Android APK",
+  "on": {
+    "push": {
+      "branches": ["main", "master"]
+    },
+    "workflow_dispatch": {}
+  },
+  "jobs": {
+    "build": {
+      "runs-on": "ubuntu-latest",
+      "steps": [
+        {
+          "name": "Checkout repository",
+          "uses": "actions/checkout@v4"
+        },
+        {
+          "name": "Setup Node.js",
+          "uses": "actions/setup-node@v4",
+          "with": {
+            "node-version": "20"
+          }
+        },
+        {
+          "name": "Setup Java 17",
+          "uses": "actions/setup-java@v4",
+          "with": {
+            "distribution": "temurin",
+            "java-version": "17"
+          }
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm install --legacy-peer-deps"
+        },
+        {
+          "name": "Sanitize app.json Icon & Splash",
+          "run": "node -e 'const fs = require(\"fs\"); const cfg = JSON.parse(fs.readFileSync(\"app.json\", \"utf8\")); delete cfg.expo.icon; cfg.expo.splash = { backgroundColor: \"#06070A\" }; fs.writeFileSync(\"app.json\", JSON.stringify(cfg, null, 2));'"
+        },
+        {
+          "name": "Generate Native Android project",
+          "env": {
+            "CI": "1"
+          },
+          "run": "npx expo prebuild --platform android --clean"
+        },
+        {
+          "name": "Build Standalone Release APK",
+          "working-directory": "android",
+          "run": "./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\" -Pandroid.injected.signing.store.file=debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android"
+        },
+        {
+          "name": "Upload APK Artifact",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "Bhagadbilla-APK",
+            "path": "android/app/build/outputs/apk/release/app-release.apk"
+          }
+        }
+      ]
+    }
+  }
+}
