@@ -45,9 +45,9 @@
           "run": "npx expo prebuild --platform android --clean"
         },
         {
-          "name": "Build Standalone Release APK",
+          "name": "Verify Keystore & Build Standalone Release APK",
           "working-directory": "android",
-          "run": "./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\" -Pandroid.injected.signing.store.file=debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android"
+          "run": "if [ ! -f \"$GITHUB_WORKSPACE/android/app/debug.keystore\" ]; then keytool -genkeypair -v -storetype PKCS12 -keystore \"$GITHUB_WORKSPACE/android/app/debug.keystore\" -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname \"CN=Android Debug,O=Android,C=US\"; fi && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m\" -Pandroid.injected.signing.store.file=\"$GITHUB_WORKSPACE/android/app/debug.keystore\" -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android"
         },
         {
           "name": "Upload APK Artifact",
