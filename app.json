@@ -2,9 +2,8 @@
   "expo": {
     "name": "Bhagadbilla",
     "slug": "bhagadbilla",
-    "version": "2.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
       "backgroundColor": "#06070A"
@@ -12,19 +11,16 @@
     "android": {
       "package": "com.aniket.bhagadbilla",
       "adaptiveIcon": {
-        "backgroundColor": "#050508"
+        "backgroundColor": "#06070A"
       },
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA"
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
-      "expo-file-system",
-      "expo-image-picker"
+      "expo-file-system"
     ]
   }
 }
